@@ -20,6 +20,7 @@ namespace SQLiteBench
             PerfTest("System.Data.SQLite.SqliteConnection", n => testADO(new SQLiteConnection("Data Source=:memory:"), n));
             PerfTest("Sql Server LocalDb(Dapper)", n => testDapper(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
             PerfTest("System.Data.SQLite.SqliteConnection(Dapper)", n => testDapper(new SQLiteConnection("Data Source=:memory:"), n));
+            PerfTest("SQLitePCL.raw (no statement caching)", n => testRAW_unprepared(n));
             PerfTest("SQLitePCL.raw", n => testRAW(n));
         }
 
@@ -117,6 +118,53 @@ namespace SQLiteBench
                     for (int i = 0; i < count; i++)
                     {
                         raw.sqlite3_reset(stmt);
+                        while (true)
+                        {
+                            var code = raw.sqlite3_step(stmt);
+                            if (code == raw.SQLITE_ROW)
+                            {
+                                var col0 = raw.sqlite3_column_int(stmt, 0);
+                                var col1 = raw.sqlite3_column_int(stmt, 1);
+                                var col2 = raw.sqlite3_column_text(stmt, 2);
+                                sum += col0 + col1 + col2.Length;
+                            }
+                            else if (code == raw.SQLITE_DONE)
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                throw new Exception(code.ToString());
+                            }
+                        }
+                    }
+                }
+
+            }
+            return sum;
+        }
+
+        static int testRAW_unprepared(int count)
+        {
+            int sum = 0;
+
+            var rc = raw.sqlite3_open(":memory:", out var db);
+            using (db)
+            {
+                if (rc != raw.SQLITE_OK)
+                {
+                    throw new Exception();
+                }
+
+                for (int i = 0; i < count; i++)
+                {
+                    var errStmt = raw.sqlite3_prepare_v2(db, query, out var stmt);
+                    using (stmt)
+                    {
+                        if (errStmt != raw.SQLITE_OK)
+                        {
+                            throw new Exception();
+                        }
                         while (true)
                         {
                             var code = raw.sqlite3_step(stmt);
