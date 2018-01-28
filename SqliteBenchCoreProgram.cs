@@ -8,7 +8,7 @@ using Dapper;
 
 namespace SQLiteBench
 {
-    class Program
+    class SqliteBenchCoreProgram
     {
         const int testIterationCount = 100000;
         static void Main(string[] args)
@@ -17,9 +17,9 @@ namespace SQLiteBench
 
             PerfTest("Sql Server LocalDb", n => testADO(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
             PerfTest("Microsoft.Data.Sqlite.SqliteConnection", n => testADO(new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:;Mode=Memory"), n));
-            PerfTest("System.Data.SQLite.SqliteConnection", n => testADO(new SQLiteConnection("Data Source=:memory:;New=True;Synchronous=Off"), n));
+            PerfTest("System.Data.SQLite.SqliteConnection", n => testADO(new SQLiteConnection("Data Source=:memory:"), n));
             PerfTest("Sql Server LocalDb(Dapper)", n => testDapper(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
-            PerfTest("System.Data.SQLite.SqliteConnection(Dapper)", n => testDapper(new SQLiteConnection("Data Source=:memory:;New=True;Synchronous=Off"), n));
+            PerfTest("System.Data.SQLite.SqliteConnection(Dapper)", n => testDapper(new SQLiteConnection("Data Source=:memory:"), n));
             PerfTest("SQLitePCL.raw", n => testRAW(n));
         }
 
@@ -33,9 +33,9 @@ namespace SQLiteBench
             if (sum1 != 30) throw new Exception("Invalid engine result");
 
             var sw = Stopwatch.StartNew();
-            var sum = countToSum((count+1));
+            var sum = countToSum((count + 1));
             sw.Stop();
-            if (sum != 30*(count+1)) throw new Exception("Invalid engine result");
+            if (sum != 30 * (count + 1)) throw new Exception("Invalid engine result");
             var firstRowUS = sw1.Elapsed.TotalMilliseconds * 1000;
             var manyRowsUS = sw.Elapsed.TotalMilliseconds * 1000;
             var extraRowsUS = manyRowsUS - firstRowUS;
@@ -44,9 +44,10 @@ namespace SQLiteBench
             Console.WriteLine($"{name}:\r\n    {extraRowsUS / count:f3}us/query marginal query cost over {count} queries;\r\n    {firstRowUS:f3}us to open and run 1 query;\r\n    overall mean: {manyRowsUS / (count + 1):f3}us/query over {count + 1} queries.\r\n");
         }
 
-        const string query = "select 1 as A, 2 as B, 'test' as C union all select 2,3, 'test2' union all select 3,4,'test71' ";
+        const string query = "select 1 as A, 2 as B, 'test' as C union all select 2,3,'test2' union all select 3,4,'test71'";
 
-        struct Row {
+        struct Row
+        {
             public int A { get; set; }
             public int B { get; set; }
             public string C { get; set; }
@@ -77,7 +78,7 @@ namespace SQLiteBench
                 conn.Open();
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "select 1,2, 'test' union all select 2,3, 'test2' union all select 3,4,'test71' ";
+                    cmd.CommandText = query;
                     for (int i = 0; i < count; i++)
                     {
                         using (var reader = cmd.ExecuteReader())
@@ -105,13 +106,14 @@ namespace SQLiteBench
                     throw new Exception();
                 }
 
-                var errStmt = raw.sqlite3_prepare_v2(db, "select 1,2, 'test' union all select 2,3, 'test2' union all select 3,4,'test71'", out var stmt);
+                var errStmt = raw.sqlite3_prepare_v2(db, query, out var stmt);
                 using (stmt)
                 {
                     if (errStmt != raw.SQLITE_OK)
                     {
                         throw new Exception();
                     }
+
                     for (int i = 0; i < count; i++)
                     {
                         raw.sqlite3_reset(stmt);
@@ -123,19 +125,20 @@ namespace SQLiteBench
                                 var col0 = raw.sqlite3_column_int(stmt, 0);
                                 var col1 = raw.sqlite3_column_int(stmt, 1);
                                 var col2 = raw.sqlite3_column_text(stmt, 2);
-                                sum += col0+col1+col2.Length;
-                                //Console.WriteLine($" {col0}  / {col1}  / {col2} ");
+                                sum += col0 + col1 + col2.Length;
                             }
                             else if (code == raw.SQLITE_DONE)
                             {
                                 break;
                             }
-                            else { throw new Exception(code.ToString()); }
+                            else
+                            {
+                                throw new Exception(code.ToString());
+                            }
                         }
-                        //break;
                     }
                 }
-                
+
             }
             return sum;
         }
