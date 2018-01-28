@@ -7,6 +7,7 @@ As a baseline, the performance of Sql Server LocalDb in the same test is also in
 
 Results on an i7-4770k using .net core 2.0 (net471 appears slightly slower overall):
 
+```
 SQLitePCL.raw:
     59.923us to open and run 1 query;
     0.659us/query marginal query cost over the next 100000 queries;
@@ -34,3 +35,4 @@ Sql Server LocalDb:
 Sql Server LocalDb(Dapper):
     56.597us to open and run 1 query;
     42.007us/query marginal query cost over the next 100000 queries;
+```
