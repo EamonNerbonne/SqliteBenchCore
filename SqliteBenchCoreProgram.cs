@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Diagnostics;
 using Dapper;
+using System.Linq;
 
 namespace SQLiteBench
 {
@@ -17,27 +18,31 @@ namespace SQLiteBench
         {
             Batteries_V2.Init();
 
-            PerfTest("Sql Server LocalDb", n => testADO(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
-            PerfTest("Microsoft.Data.Sqlite.SqliteConnection", n => testADO(new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:;Mode=Memory"), n));
-            PerfTest("System.Data.SQLite.SqliteConnection", n => testADO(new SQLiteConnection("Data Source=:memory:"), n));
-            PerfTest("Sql Server LocalDb(Dapper)", n => testDapper(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
-            PerfTest("System.Data.SQLite.SqliteConnection(Dapper)", n => testDapper(new SQLiteConnection("Data Source=:memory:"), n));
-            PerfTest("SQLitePCL.raw (no statement caching)", n => testRAW_unprepared(n));
             PerfTest("SQLitePCL.raw", n => testRAW(n));
+            PerfTest("SQLitePCL.raw (no statement caching)", n => testRAW_unprepared(n));
+
+            PerfTest("System.Data.SQLite.SqliteConnection", n => testADO(new SQLiteConnection("Data Source=:memory:"), n));
+            PerfTest("System.Data.SQLite.SqliteConnection(Dapper)", n => testDapper(new SQLiteConnection("Data Source=:memory:"), n));
+
+            PerfTest("Microsoft.Data.Sqlite.SqliteConnection", n => testADO(new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:;Mode=Memory"), n));
+
+            PerfTest("Sql Server LocalDb", n => testADO(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
+            PerfTest("Sql Server LocalDb(Dapper)", n => testDapper(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
         }
 
         static int BestTime(int count, Func<int, int> countToSum, int repeats, out double microseconds)
         {
-            var bestTime = TimeSpan.MaxValue;
+            var times = new double[repeats];
             int sum = 0;
             for (int i = 0; i < repeats; i++)
             {
                 var sw = Stopwatch.StartNew();
                 sum = countToSum(count);
                 sw.Stop();
-                bestTime = bestTime < sw.Elapsed ? bestTime : sw.Elapsed;
+                times[i] = sw.Elapsed.TotalMilliseconds * 1000;
             }
-            microseconds = bestTime.Milliseconds * 1000;
+            Array.Sort(times);
+            microseconds = times.Take((repeats + 1) / 2).Average();
             return sum;
         }
 
@@ -45,14 +50,14 @@ namespace SQLiteBench
         {
             var count = testIterationCount;
             countToSum(2);//avoid cold caches
-            var sum1 = BestTime(1, countToSum, timingRepeats, out var openAndOneQueryUS);//startup-cost
+            var sum1 = BestTime(1, countToSum, timingRepeats*100, out var openAndOneQueryUS);//startup-cost
             if (sum1 != 30) throw new Exception("Invalid engine result");
 
             var sum = BestTime(count+1, countToSum, timingRepeats, out var manyQueriesUS);
             if (sum != 30 * (count + 1)) throw new Exception("Invalid engine result");
             var marginalqueryCostUS = (manyQueriesUS - openAndOneQueryUS)/count;
 
-            Console.WriteLine($"{name}:\r\n    {openAndOneQueryUS:f3}us to open and run 1 query;\r\n    {marginalqueryCostUS:f3}us/query marginal query cost over {count} queries;\r\n");
+            Console.WriteLine($"{name}:\r\n    {openAndOneQueryUS:f3}us to open and run 1 query;\r\n    {marginalqueryCostUS:f3}us/query marginal query cost over the next {count} queries;\r\n");
         }
 
         const string query = "select 1 as A, 2 as B, 'test' as C union all select 2,3,'test2' union all select 3,4,'test71'";
