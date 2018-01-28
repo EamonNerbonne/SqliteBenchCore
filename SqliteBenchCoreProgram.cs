@@ -11,6 +11,8 @@ namespace SQLiteBench
     class SqliteBenchCoreProgram
     {
         const int testIterationCount = 100000;
+        const int timingRepeats = 10;
+
         static void Main(string[] args)
         {
             Batteries_V2.Init();
@@ -24,25 +26,33 @@ namespace SQLiteBench
             PerfTest("SQLitePCL.raw", n => testRAW(n));
         }
 
-        private static void PerfTest(string name, Func<int, int> countToSum)
+        static int BestTime(int count, Func<int, int> countToSum, int repeats, out double microseconds)
+        {
+            var bestTime = TimeSpan.MaxValue;
+            int sum = 0;
+            for (int i = 0; i < repeats; i++)
+            {
+                var sw = Stopwatch.StartNew();
+                sum = countToSum(count);
+                sw.Stop();
+                bestTime = bestTime < sw.Elapsed ? bestTime : sw.Elapsed;
+            }
+            microseconds = bestTime.Milliseconds * 1000;
+            return sum;
+        }
+
+        static void PerfTest(string name, Func<int, int> countToSum)
         {
             var count = testIterationCount;
             countToSum(2);//avoid cold caches
-            var sw1 = Stopwatch.StartNew();
-            var sum1 = countToSum(1);//startup-cost
-            sw1.Stop();
+            var sum1 = BestTime(1, countToSum, timingRepeats, out var openAndOneQueryUS);//startup-cost
             if (sum1 != 30) throw new Exception("Invalid engine result");
 
-            var sw = Stopwatch.StartNew();
-            var sum = countToSum((count + 1));
-            sw.Stop();
+            var sum = BestTime(count+1, countToSum, timingRepeats, out var manyQueriesUS);
             if (sum != 30 * (count + 1)) throw new Exception("Invalid engine result");
-            var firstRowUS = sw1.Elapsed.TotalMilliseconds * 1000;
-            var manyRowsUS = sw.Elapsed.TotalMilliseconds * 1000;
-            var extraRowsUS = manyRowsUS - firstRowUS;
+            var marginalqueryCostUS = (manyQueriesUS - openAndOneQueryUS)/count;
 
-
-            Console.WriteLine($"{name}:\r\n    {extraRowsUS / count:f3}us/query marginal query cost over {count} queries;\r\n    {firstRowUS:f3}us to open and run 1 query;\r\n    overall mean: {manyRowsUS / (count + 1):f3}us/query over {count + 1} queries.\r\n");
+            Console.WriteLine($"{name}:\r\n    {openAndOneQueryUS:f3}us to open and run 1 query;\r\n    {marginalqueryCostUS:f3}us/query marginal query cost over {count} queries;\r\n");
         }
 
         const string query = "select 1 as A, 2 as B, 'test' as C union all select 2,3,'test2' union all select 3,4,'test71'";
