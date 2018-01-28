@@ -5,6 +5,7 @@ The query `select 1 as A, 2 as B, 'test' as C union all select 2,3,'test2' union
 
 As a baseline, the performance of Sql Server LocalDb in the same test is also included (which is not an in-proc db, and is thus expected to incur more overhead).
 
+Results on an i7-4770k using .net core 2.0 (net471 appears slightly slower overall):
 
 Sql Server LocalDb:
     37.285us/query marginal query cost over 100000 queries;
