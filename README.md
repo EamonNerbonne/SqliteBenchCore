@@ -1,7 +1,7 @@
 ﻿A simple test to evaluate the overhead of various ways of accessing sqlite.
 
 The test opens connections to an in-memory sqlite database and uses no tables to ensure the bottleneck is not the disk.
-The query `select 1 as A, 2 as B, 'test' as C union all select 2,3,'test2' union all select 3,4,'test71'` is run in batches of 100000, and that's repeated 10 times.  The mean of the best 5 times is reported.
+The query `select 1 as A, 2 as B, 'test' as C union all select 2,3,'test2' union all select 3,4,'test71'` is run in batches of 100000, and that's repeated 10 times.  The mean duration of the fastest 5 batches is reported.
 
 As a baseline, the performance of Sql Server LocalDb in the same test is also included (which is not an in-proc db, and is thus expected to incur more overhead).
 
