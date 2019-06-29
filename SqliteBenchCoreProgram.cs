@@ -1,15 +1,15 @@
-﻿using SQLitePCL;
-using System;
+﻿using System;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Data.SQLite;
 using System.Diagnostics;
-using Dapper;
 using System.Linq;
+using Dapper;
+using SQLitePCL;
 
-namespace SQLiteBench
+namespace SqliteBenchCore
 {
-    class SqliteBenchCoreProgram
+    static class SqliteBenchCoreProgram
     {
         const int testIterationCount = 100000;
         const int timingRepeats = 10;
@@ -18,9 +18,9 @@ namespace SQLiteBench
         {
             Batteries_V2.Init();
 
-            PerfTest("SQLitePCL.raw", n => testRAW(n));
-            PerfTest("SQLitePCL.raw (no statement caching)", n => testRAW_unprepared(n));
-            PerfTest("SQLitePCL.raw (no connection caching)", n => testRAW_unprepared2(n));
+            PerfTest("SQLitePCL.raw", testRAW);
+            PerfTest("SQLitePCL.raw (no statement caching)", testRAW_unprepared);
+            PerfTest("SQLitePCL.raw (no connection caching)", testRAW_unprepared2);
 
             PerfTest("System.Data.SQLite.SqliteConnection", n => testADO(new SQLiteConnection("Data Source=:memory:"), n));
             PerfTest("System.Data.SQLite.SqliteConnection(Dapper)", n => testDapper(new SQLiteConnection("Data Source=:memory:"), n));
@@ -29,13 +29,15 @@ namespace SQLiteBench
 
             PerfTest("Sql Server LocalDb", n => testADO(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
             PerfTest("Sql Server LocalDb(Dapper)", n => testDapper(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
+            PerfTest("Sql Server LocalDb(Microsoft.Data.SqlClient)", n => testADO(new Microsoft.Data.SqlClient.SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
+            PerfTest("Sql Server LocalDb(Microsoft.Data.SqlClient, Dapper)", n => testDapper(new Microsoft.Data.SqlClient.SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
         }
 
         static int BestTime(int count, Func<int, int> countToSum, int repeats, out double microseconds)
         {
             var times = new double[repeats];
-            int sum = 0;
-            for (int i = 0; i < repeats; i++)
+            var sum = 0;
+            for (var i = 0; i < repeats; i++)
             {
                 var sw = Stopwatch.StartNew();
                 sum = countToSum(count);
@@ -76,7 +78,7 @@ namespace SQLiteBench
             using (conn)
             {
                 conn.Open();
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                 {
                     foreach (var row in conn.Query<Row>(query))
                     {
@@ -96,7 +98,7 @@ namespace SQLiteBench
                 using (var cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = query;
-                    for (int i = 0; i < count; i++)
+                    for (var i = 0; i < count; i++)
                     {
                         using (var reader = cmd.ExecuteReader())
                         {
@@ -113,7 +115,7 @@ namespace SQLiteBench
 
         static int testRAW(int count)
         {
-            int sum = 0;
+            var sum = 0;
 
             var rc = raw.sqlite3_open(":memory:", out var db);
             using (db)
@@ -131,7 +133,7 @@ namespace SQLiteBench
                         throw new Exception();
                     }
 
-                    for (int i = 0; i < count; i++)
+                    for (var i = 0; i < count; i++)
                     {
                         raw.sqlite3_reset(stmt);
                         while (true)
@@ -162,7 +164,7 @@ namespace SQLiteBench
 
         static int testRAW_unprepared(int count)
         {
-            int sum = 0;
+            var sum = 0;
 
             var rc = raw.sqlite3_open(":memory:", out var db);
             using (db)
@@ -172,7 +174,7 @@ namespace SQLiteBench
                     throw new Exception();
                 }
 
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                 {
                     var errStmt = raw.sqlite3_prepare_v2(db, query, out var stmt);
                     using (stmt)
@@ -210,9 +212,9 @@ namespace SQLiteBench
 
         static int testRAW_unprepared2(int count)
         {
-            int sum = 0;
+            var sum = 0;
 
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 var rc = raw.sqlite3_open(":memory:", out var db);
                 using (db)
