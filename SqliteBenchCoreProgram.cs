@@ -142,7 +142,7 @@ namespace SQLiteBench
                                 var col0 = raw.sqlite3_column_int(stmt, 0);
                                 var col1 = raw.sqlite3_column_int(stmt, 1);
                                 var col2 = raw.sqlite3_column_text(stmt, 2);
-                                sum += col0 + col1 + col2.Length;
+                                sum += col0 + col1 + col2.utf8_to_string().Length;
                             }
                             else if (code == raw.SQLITE_DONE)
                             {
@@ -189,7 +189,7 @@ namespace SQLiteBench
                                 var col0 = raw.sqlite3_column_int(stmt, 0);
                                 var col1 = raw.sqlite3_column_int(stmt, 1);
                                 var col2 = raw.sqlite3_column_text(stmt, 2);
-                                sum += col0 + col1 + col2.Length;
+                                sum += col0 + col1 + col2.utf8_to_string().Length;
                             }
                             else if (code == raw.SQLITE_DONE)
                             {
@@ -237,7 +237,7 @@ namespace SQLiteBench
                                 var col0 = raw.sqlite3_column_int(stmt, 0);
                                 var col1 = raw.sqlite3_column_int(stmt, 1);
                                 var col2 = raw.sqlite3_column_text(stmt, 2);
-                                sum += col0 + col1 + col2.Length;
+                                sum += col0 + col1 + col2.utf8_to_string().Length;
                             }
                             else if (code == raw.SQLITE_DONE)
                             {
