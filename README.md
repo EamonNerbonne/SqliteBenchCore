@@ -43,34 +43,38 @@ Results from January 2024 on a Ryzen 7950x using .net 8.0, Dapper 2.0.123, Micro
 
 ```
 SQLitePCL.raw:
-    9.356us to open and run 1 query;
-    0.341us/query marginal query cost over the next 100000 queries;
+    9.535us to open and run 1 query;
+    0.343us/query marginal query cost over the next 100000 queries;
 
 SQLitePCL.raw (no statement caching):
-    9.271us to open and run 1 query;
-    2.038us/query marginal query cost over the next 100000 queries;
+    9.498us to open and run 1 query;
+    2.147us/query marginal query cost over the next 100000 queries;
 
 SQLitePCL.raw (no connection caching):
-    9.124us to open and run 1 query;
-    8.884us/query marginal query cost over the next 100000 queries;
+    8.956us to open and run 1 query;
+    8.927us/query marginal query cost over the next 100000 queries;
 
 System.Data.SQLite.SqliteConnection:
-    111.742us to open and run 1 query;
-    0.720us/query marginal query cost over the next 100000 queries;
+    112.339us to open and run 1 query;
+    0.715us/query marginal query cost over the next 100000 queries;
 
 System.Data.SQLite.SqliteConnection(Dapper):
-    122.923us to open and run 1 query;
-    3.366us/query marginal query cost over the next 100000 queries;
+    118.749us to open and run 1 query;
+    3.344us/query marginal query cost over the next 100000 queries;
 
 Microsoft.Data.Sqlite.SqliteConnection:
-    11.353us to open and run 1 query;
-    0.596us/query marginal query cost over the next 100000 queries;
+    11.403us to open and run 1 query;
+    0.601us/query marginal query cost over the next 100000 queries;
+
+Microsoft.Data.Sqlite.SqliteConnection(Dapper):
+    11.457us to open and run 1 query;
+    3.449us/query marginal query cost over the next 100000 queries;
 
 Sql Server LocalDb:
-    42.501us to open and run 1 query;
-    22.638us/query marginal query cost over the next 100000 queries;
+    42.139us to open and run 1 query;
+    23.076us/query marginal query cost over the next 100000 queries;
 
 Sql Server LocalDb(Dapper):
-    42.580us to open and run 1 query;
-    25.426us/query marginal query cost over the next 100000 queries;
+    44.974us to open and run 1 query;
+    24.127us/query marginal query cost over the next 100000 queries;
 ```
