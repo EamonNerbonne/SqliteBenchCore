@@ -19,17 +19,11 @@ PerfTest("SQLitePCL.raw (no statement caching)", testRAW_unprepared);
 PerfTest("SQLitePCL.raw (no connection caching)", testRAW_unprepared2);
 
 PerfTest("System.Data.SQLite.SqliteConnection", n => testADO(new SQLiteConnection("Data Source=:memory:"), n));
-PerfTest("System.Data.SQLite.SqliteConnection(Dapper)",
-    n => testDapper(new SQLiteConnection("Data Source=:memory:"), n));
-
-//PerfTest("Microsoft.Data.Sqlite.SqliteConnection", n => testADO(new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:;Mode=Memory"), n));
+PerfTest("System.Data.SQLite.SqliteConnection(Dapper)", n => testDapper(new SQLiteConnection("Data Source=:memory:"), n));
+PerfTest("Microsoft.Data.Sqlite.SqliteConnection", n => testADO(new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:;Mode=Memory"), n));
 
 PerfTest("Sql Server LocalDb", n => testADO(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
 PerfTest("Sql Server LocalDb(Dapper)", n => testDapper(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
-PerfTest("Sql Server LocalDb(Microsoft.Data.SqlClient)",
-    n => testADO(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
-PerfTest("Sql Server LocalDb(Microsoft.Data.SqlClient, Dapper)",
-    n => testDapper(new SqlConnection("Data Source=(LocalDb)\\MSSQLLocalDB"), n));
 
 
 static int BestTime(int count, Func<int, int> countToSum, int repeats, out double microseconds)
